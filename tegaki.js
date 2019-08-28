@@ -3,7 +3,7 @@
 var TegakiBrush = {
   brushFn: function(x, y) {
     var i, ctx, dest, data, len, kernel;
-    
+
     x = 0 | x;
     y = 0 | y;
     
@@ -13,12 +13,12 @@ var TegakiBrush = {
     kernel = this.kernel;
     len = kernel.length;
     
-    i = 0;
-    while (i < len) {
+    for (i = 0; i < len;) {
       data[i] = this.rgb[0]; ++i;
       data[i] = this.rgb[1]; ++i;
       data[i] = this.rgb[2]; ++i;
-      data[i] += kernel[i] * (1.0 - data[i] / 255); ++i;
+      data[i] += kernel[i] * (1.0 - data[i] / 255);
+      ++i;
     }
     
     ctx.putImageData(dest, x, y);
@@ -92,8 +92,7 @@ var TegakiBrush = {
     hs = Math.round(r);
     col = row = -hs;
     
-    i = 0;
-    while (i < len) {
+    for (i = 0; i < len; i += 4) {
       if (col >= hs) {
         col = -hs;
         ++row;
@@ -110,24 +109,20 @@ var TegakiBrush = {
       
       if (sqd > sqlen) {
         a = 0;
-      }
-      else {
+      } else {
         a = sqd / sqlen;
         a = (Math.exp(1 - 1 / a) / a);
         a = 255 - ((0 | (a * 100 + 0.5)) / 100) * 255;
       }
-      
+
       if (this.alphaDamp) {
         a *= this.alpha * this.alphaDamp;
-      }
-      else {
+      } else {
         a *= this.alpha;
       }
-      
+
       data[i + 3] = a;
-      
-      i += 4;
-      
+
       ++col;
     }
     
@@ -218,8 +213,7 @@ var TegakiPipette = {
     
     if (true) {
       ctx = Tegaki.flatten().getContext('2d');
-    }
-    else {
+    } else {
       ctx = Tegaki.activeCtx;
     }
     
@@ -282,8 +276,7 @@ var TegakiPencil = {
     
     a = 0 | (this.alpha * 255);
     
-    i = 0;
-    while (i < len) {
+    for (i = 0; i < len;) {
       data[i] = this.rgb[0]; ++i;
       data[i] = this.rgb[1]; ++i;
       data[i] = this.rgb[2]; ++i;
@@ -337,8 +330,7 @@ var TegakiPencil = {
       
       if (e <= 0) {
         e += 2 * y + 1;
-      }
-      else {
+      } else {
         x--;
         e += 2 * (y - x) + 1;
       }
@@ -603,8 +595,7 @@ var TegakiDodge = {
     kernel = this.kernel;
     len = kernel.length;
     
-    i = 0;
-    while (i < len) {
+    for (i = 0; i < len;) {
       aa = kernel[i + 3] * 0.3;
       a = 1 + kernel[i + 3] / 255;
       data[i] = data[i] * a + aa; ++i;
@@ -644,8 +635,7 @@ var TegakiBurn = {
     kernel = this.kernel;
     len = kernel.length;
     
-    i = 0;
-    while (i < len) {
+    for (i = 0; i < len;) {
       a = 1 - kernel[i + 3] / 255;
       data[i] = data[i] * a; ++i;
       data[i] = data[i] * a; ++i;
@@ -922,8 +912,7 @@ var TegakiHistoryActions = {
 TegakiHistoryActions.Draw.prototype.addCanvasState = function(canvas, type) {
   if (type) {
     this.canvasAfter = T$.copyCanvas(canvas);
-  }
-  else {
+  } else {
     this.canvasBefore = T$.copyCanvas(canvas);
   }
 };
@@ -998,8 +987,7 @@ TegakiHistoryActions.DestroyLayers.prototype.redo = function() {
   if (this.layerId) {
     ids.push(this.layerId);
     Tegaki.mergeLayers(ids);
-  }
-  else {
+  } else {
     Tegaki.deleteLayers(ids);
   }
 };
@@ -1541,8 +1529,7 @@ var Tegaki = {
       if (aabb.height > T$.docEl.clientHeight) {
         cnt.classList.add('tegaki-overflow-y');
       }
-    }
-    else {
+    } else {
       cnt.classList.remove('tegaki-overflow-x');
       cnt.classList.remove('tegaki-overflow-y');
     }
@@ -1560,8 +1547,7 @@ var Tegaki = {
           + Tegaki.layersCnt.scrollLeft
           - Tegaki.offsetX
         ) / Tegaki.zoomLevel);
-    }
-    else {
+    } else {
       return 0 | ((
         e.clientY
           + window.pageYOffset
@@ -1616,8 +1602,7 @@ var Tegaki = {
     if (!ctx) {
       canvas = T$.el('canvas');
       ctx = canvas.getContext('2d');
-    }
-    else {
+    } else {
       canvas = ctx.canvas;
     }
     
@@ -1643,17 +1628,18 @@ var Tegaki = {
     
     for (i = 0; type = ary[i]; ++i) {
       el = T$.id('tegaki-' + type);
-      
-      if (type === 'color') {
-        el.value = Tegaki.toolColor;
+
+      switch (type) {
+        case 'color':
+          el.value = Tegaki.toolColor;
+          break;
+        case 'zoom':
+          el.value = Tegaki.zoomLevel;
+          break;
+        default:
+          el.value = tool[type];
       }
-      else if (type === 'zoom') {
-        el.value = Tegaki.zoomLevel;
-      }
-      else {
-        el.value = tool[type];
-      }
-      
+
       if (el.type === 'range') {
         el.previousElementSibling.setAttribute('data-value', el.value);
       }
@@ -1662,11 +1648,11 @@ var Tegaki = {
   
   rebuildLayerCtrl: function() {
     var i, layer, sel, opt;
-    
+
     sel = T$.id('tegaki-layer');
-    
+
     sel.textContent = '';
-    
+
     for (i = Tegaki.layers.length - 1; layer = Tegaki.layers[i]; i--) {
       opt = T$.el('option');
       opt.value = layer.id;
@@ -1674,7 +1660,7 @@ var Tegaki = {
       sel.appendChild(opt);
     }
   },
-  
+
   getColorAt: function(ctx, posX, posY) {
     var rgba = ctx.getImageData(posX, posY, 1, 1).data;
     
@@ -1687,11 +1673,11 @@ var Tegaki = {
   renderCursor: function(x0, y0) {
     var canvas, e, x, y, imageData, data, side,
       srcImageData, srcData, c, color, r, rr;
-    
+
     side = 0 | Tegaki.tool.size;
     r = 0 | (side / 2);
     rr = 0 | ((side + 1) % 2);
-    
+
     Tegaki.clearCtx(Tegaki.cursorCtx);
     
     srcImageData = Tegaki.flatCtx.getImageData(x0 - r, y0 - r, side, side);
@@ -1862,8 +1848,7 @@ var Tegaki = {
     
     if (selectedOptions.length > 1) {
       Tegaki.activeLayer = null;
-    }
-    else {
+    } else {
       Tegaki.setActiveLayer(+this.value);
     }
   },
@@ -1890,12 +1875,11 @@ var Tegaki = {
     
     if (selectedOptions.length > 1) {
       ary = [];
-      
+
       for (i = 0; opt = selectedOptions[i]; ++i) {
         ary.push(+opt.value);
       }
-    }
-    else {
+    } else {
       ary = [+sel.value];
     }
     
@@ -1917,8 +1901,7 @@ var Tegaki = {
       for (i = 0; opt = selectedOptions[i]; ++i) {
         ary.push(+opt.value);
       }
-    }
-    else {
+    } else {
       ary = [+sel.value];
     }
     
@@ -1936,12 +1919,11 @@ var Tegaki = {
     
     if (selectedOptions.length > 1) {
       ary = [];
-      
+
       for (i = 0; opt = selectedOptions[i]; ++i) {
         ary.push(+opt.value);
       }
-    }
-    else {
+    } else {
       ary = [+sel.value];
     }
     
@@ -1988,8 +1970,7 @@ var Tegaki = {
     if (this.value === '0') {
       Tegaki.ctx.fillStyle = Tegaki.bgColor;
       Tegaki.ctx.fillRect(0, 0, Tegaki.baseWidth, Tegaki.baseHeight);
-    }
-    else {
+    } else {
       img = T$.el('img');
       img.onload = Tegaki.onImageLoaded;
       img.onerror = Tegaki.onImageError;
@@ -2060,13 +2041,13 @@ var Tegaki = {
   
   getLayerIndex: function(id) {
     var i, layer, layers = Tegaki.layers;
-    
+
     for (i = 0; layer = layers[i]; ++i) {
       if (layer.id === id) {
         return i;
       }
     }
-    
+
     return -1;
   },
   
@@ -2103,11 +2084,10 @@ var Tegaki = {
     cnt.insertBefore(opt, cnt.firstElementChild);
     
     nodes = T$.cls('tegaki-layer', Tegaki.layersCnt);
-    
+
     if (nodes.length) {
       last = nodes[nodes.length - 1];
-    }
-    else {
+    } else {
       last = Tegaki.canvas;
     }
     
@@ -2186,8 +2166,7 @@ var Tegaki = {
       );
       opt.parentNode.insertBefore(opt, opt.previousElementSibling);
       tmpId = idx + 1;
-    }
-    else {
+    } else {
       if (canvas.previousElementSibling.id === 'tegaki-canvas') { return false; }
       canvas.parentNode.insertBefore(canvas, canvas.previousElementSibling);
       opt.parentNode.insertBefore(opt, opt.nextElementSibling.nextElementSibling);
@@ -2219,8 +2198,7 @@ var Tegaki = {
       if (flag) {
         sel.options[optIdx - idx].classList.remove('tegaki-strike');
         layer.canvas.classList.remove('tegaki-hidden');
-      }
-      else {
+      } else {
         sel.options[optIdx - idx].classList.add('tegaki-strike');
         layer.canvas.classList.add('tegaki-hidden');
       }
@@ -2297,11 +2275,9 @@ var Tegaki = {
   onMouseMove: function(e) {
     if (Tegaki.isPainting) {
       Tegaki.tool.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
-    }
-    else if (Tegaki.isColorPicking) {
+    } else if (Tegaki.isColorPicking) {
       TegakiPipette.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
-    }
-    else if (Tegaki.cursor) {
+    } else if (Tegaki.cursor) {
       Tegaki.renderCursor(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
     }
   },
@@ -2316,8 +2292,7 @@ var Tegaki = {
         alert(TegakiStrings.hiddenActiveLayer);
         return;
       }
-    }
-    else if (e.target !== Tegaki.bg) {
+    } else if (e.target !== Tegaki.bg) {
       return;
     }
     
@@ -2327,8 +2302,7 @@ var Tegaki = {
       Tegaki.isColorPicking = true;
       
       TegakiPipette.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
-    }
-    else if (e.which === 1) {
+    } else if (e.which === 1) {
       e.preventDefault();
       
       Tegaki.isPainting = true;
@@ -2352,8 +2326,7 @@ var Tegaki = {
       TegakiHistory.push(TegakiHistory.pendingAction);
       Tegaki.isPainting = false;
       Tegaki.updateFlatCtx();
-    }
-    else if (Tegaki.isColorPicking) {
+    } else if (Tegaki.isColorPicking) {
       e.preventDefault();
       Tegaki.isColorPicking = false;
     }
